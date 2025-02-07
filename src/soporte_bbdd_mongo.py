@@ -3,12 +3,12 @@ from pymongo.database import Database
 from pymongo.server_api import ServerApi
 import pandas as pd
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from IPython.display import display
 import numpy as np
 
 # Cargar variables de entorno
-load_dotenv()
+# load_dotenv()
 
 
 def probar_conn_atlas():
