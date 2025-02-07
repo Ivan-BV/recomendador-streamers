@@ -158,7 +158,7 @@ radio = st.radio("Elige modelo:", ('Basico', 'Avanzado'))
 if st.button("Recomendar"):
     if radio == 'Basico':
         # Cargar modelos KNN entrenados
-        modelos_knn, num_cols, scaler = joblib.load("../streamlit/modelos/modelo_basico.pkl")
+        modelos_knn, num_cols, scaler = joblib.load("modelos/modelo_basico.pkl")
         # Preprocesamiento de datos
         df.replace(r'(?<!.)-(?!.)', np.nan, regex=True, inplace=True)
         for col in num_cols:
@@ -173,7 +173,7 @@ if st.button("Recomendar"):
         resultados = recomendar_streamers_por_categoria(categoria_seleccionada, df, radio, num_cols)
     else:
         # Cargar modelos KNN entrenados
-        modelos_knn, num_cols, kmeans, scaler, le = joblib.load("../streamlit/modelos/modelo_avanzado.pkl")
+        modelos_knn, num_cols, kmeans, scaler, le = joblib.load("modelos/modelo_avanzado.pkl")
         num_cols.remove('categoria_codificada')
         num_cols.remove('cluster')
         # Preprocesamiento de datos
