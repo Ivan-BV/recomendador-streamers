@@ -3,13 +3,8 @@ from pymongo.database import Database
 from pymongo.server_api import ServerApi
 import pandas as pd
 import os
-# from dotenv import load_dotenv
-from IPython.display import display
 import numpy as np
-
-# Cargar variables de entorno
-# load_dotenv()
-
+import streamlit as st
 
 def probar_conn_atlas():
     uri = os.getenv("MONGO_URI_ATLAS")
@@ -22,37 +17,14 @@ def probar_conn_atlas():
     except Exception as e:
         print(e)
 
-def probar_conn_railway():
-    """
-    Prueba la conexión con MongoDB alojado en Railway.
-    
-    Verifica si la base de datos está accesible utilizando la URI almacenada en las variables de entorno.
-    
-    Prints:
-        Mensaje de éxito si la conexión es exitosa.
-        Mensaje de error si la conexión falla.
-    """
-    uri = os.getenv("MONGO_URI")
-    client = MongoClient(uri)
-    try:
-        client.server_info()  # Verifica la conexión
-        print("✅ Conectado a MongoDB en Railway")
-    except Exception as e:
-        print(f"❌ No se pudo conectar a MongoDB: {e}")
 
-import streamlit as st
-def conectar_mongo(local = False):
+def conectar_mongo():
     """
     Conecta a la base de datos MongoDB usando variables de entorno.
     
     Returns:
         Cliente MongoDB y base de datos conectada.
     """
-    # if local:
-    #     uri = os.getenv("MONGO_URI_LOCAL", "")
-    # else:
-    #     uri = os.getenv("MONGO_URI_ATLAS", "")
-    # db_name = os.getenv("MONGO_URI_ATLAS", "")
     uri: str = st.secrets['security']['MONGO_URI_ATLAS']
     db_name: str = st.secrets['security']['MONGO_DB_NAME']
     client = MongoClient(uri)
