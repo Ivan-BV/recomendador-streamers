@@ -7,8 +7,28 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Interfaz Streamlit
-st.title("Recomendador de Streamers por Categoría")
-st.write("Este recomendador utiliza un modelo de K-Nearest Neighbors para encontrar streamers similares a los de una categoría seleccionada.")
+col1, col2, col3 = st.columns([1,2,1])
+
+with col2:
+    st.image("imagenes/logo.png", use_container_width=True)
+    st.markdown("<h1 style='text-align: center; color: white;'>Streamers Finder</h1>", unsafe_allow_html=True)
+
+st.markdown(
+    """
+    <h3 style="text-align: center;"> 🎮 Descubre los Mejores Streamers para Ti 🎮</h3>
+
+    #### 🔍 ¿De qué trata esta app?
+    
+    Bienvenido/a a **tu guía personalizada de streamers**. 📺🎮
+
+    Aquí podrás **descubrir y explorar** streamers basados en las categorías de juegos que te gustan.
+
+    🚀 Encuentra contenido nuevo, compara streamers y accede a métricas detalladas para tomar la mejor decisión.  
+
+    🔥 **¿Listo para descubrir tu próximo streamer favorito?** ¡Empecemos! 🎧✨
+    """,
+    unsafe_allow_html=True
+)
 st.write("""
 🤖 Nuestro sistema de recomendación tiene dos enfoques:
 
