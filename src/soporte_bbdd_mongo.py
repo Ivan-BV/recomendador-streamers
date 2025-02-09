@@ -6,10 +6,31 @@ import numpy as np
 import streamlit as st
 
 def probar_conn_atlas():
+    """
+    Prueba la conexión con MongoDB Atlas.
+
+    Esta función obtiene la URI de conexión desde `st.secrets`, crea un cliente de MongoDB
+    y envía un comando `ping` para verificar que la conexión con el servidor es exitosa.
+
+    Si la conexión es exitosa, imprime un mensaje de confirmación.
+    Si ocurre un error, imprime la excepción capturada.
+
+    Args:
+        None
+
+    Returns:
+        None: Solo imprime mensajes de éxito o error en la consola.
+
+    Example:
+        >>> probar_conn_atlas()
+        Pinged your deployment. You successfully connected to MongoDB!
+    """
     uri: str = st.secrets['security']['MONGO_URI_ATLAS']
-    # Create a new client and connect to the server
+    
+    # Crear un nuevo cliente y conectar al servidor
     client = MongoClient(uri, server_api=ServerApi('1'))
-    # Send a ping to confirm a successful connection
+    
+    # Enviar un ping para confirmar la conexión
     try:
         client.admin.command('ping')
         print("Pinged your deployment. You successfully connected to MongoDB!")
@@ -30,51 +51,27 @@ def conectar_mongo():
     db = client[db_name]
     return client, db
 
-# src/soporte_bbdd_mongo.py
-
-def cargar_datos_en_memoria(db):
+def obtener_datos_historicos_streamer(nombre_streamer: str):
     """
-    Carga en memoria las colecciones 'categorias_streameadas' y 'modelo_basico'.
-
-    Args:
-        db: Conexión a MongoDB.
-
-    Returns:
-        df_categorias: DataFrame con la información de categorías de los streamers.
-        df_ranking: DataFrame con el DataFrame utilizado para entrenar el modelo básico.
-    """
-    # Extrae la colección de categorías
-    df_categorias = pd.DataFrame(db["categorias_streameadas"].find({}, {"_id": 0}))
-    # Extrae el DataFrame de entrenamiento almacenado en la colección "modelo_basico"
-    df_ranking = pd.DataFrame(db["historico_streamers"].find({}, {"_id": 0}))
-    return df_categorias, df_ranking
-
-
-def obtener_streamers_por_categoria(df_categorias, categoria):
-    """
-    Filtra el DataFrame de categorías para obtener los streamers que han hecho contenido en una categoría específica.
+    Obtiene los datos de un streamer específico desde MongoDB.
     
-    Args:
-        df_categorias: DataFrame con los streamers y sus categorías.
-        categoria: Nombre de la categoría.
-    
-    Returns:
-        Lista de IDs de streamers que han hecho contenido en esa categoría.
+    :param nombre_streamer: Nombre del streamer a buscar.
+    :param db_name: Nombre de la base de datos en MongoDB.
+    :param collection_name: Nombre de la colección en MongoDB.
+    :return: Lista de documentos con los datos del streamer.
     """
-    return df_categorias[df_categorias["categoria"] == categoria]["id_streamer"].tolist()
+    # Conectar con MongoDB
+    client, db = conectar_mongo()
+    collection_name="historico_streamers"
+    collection = db[collection_name]
 
-def obtener_metricas_streamers(df_historico, lista_ids):
-    """
-    Filtra el DataFrame de históricos para obtener los datos de los streamers seleccionados.
-    
-    Args:
-        df_historico: DataFrame con datos históricos de los streamers.
-        lista_ids: Lista de IDs de streamers seleccionados.
-    
-    Returns:
-        DataFrame con las métricas de los streamers.
-    """
-    return df_historico[df_historico["id_streamer"].isin(lista_ids)]
+    # Filtrar por nombre de streamer
+    resultados = list(collection.find({"nombre": nombre_streamer}))
+
+    # Cerrar conexión
+    client.close()
+
+    return resultados
 
 # Modelo basico
 def cargar_ranking_desde_mongo(db: Database):
@@ -98,7 +95,6 @@ def cargar_ranking_desde_mongo(db: Database):
         df = df.groupby("Nombre", as_index=False).first()
     return df
 
-
 def obtener_datos_para_modelo_basico():
     """
     Extrae los datos necesarios para el modelo básico desde Mongo.
@@ -107,7 +103,6 @@ def obtener_datos_para_modelo_basico():
     """
     client, db = conectar_mongo()
     df_ranking = cargar_ranking_desde_mongo(db)
-    # df_historico = pd.DataFrame(list(db["historico_streamers"].find()))
     
     if "rank" not in df_ranking.columns:
         raise ValueError("El campo 'Rank' no se encuentra en los datos de 'historico_streamers'.")
@@ -123,10 +118,8 @@ def obtener_datos_para_modelo_basico():
         
     df_ranking["clasificacion"] = df_ranking["rank"].apply(clasificar_rank)
     return df_ranking
-        
 
-
-# Para el modelo avanzado
+# Modelo avanzado
 def cargar_historial_desde_mongo(db=None):
     """
     Carga todos los registros históricos de la colección 'historico_streamers'.
@@ -245,5 +238,4 @@ def obtener_datos_para_modelo_avanzado():
 if __name__ == "__main__":
     # Conectar a MongoDB
     client, db = conectar_mongo()
-    
     client.close()
