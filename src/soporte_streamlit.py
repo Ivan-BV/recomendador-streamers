@@ -511,11 +511,13 @@ def preprocesar_datos(historico: pd.DataFrame, categorias: pd.DataFrame, streame
     df = df[df['categoria'] != "2XKO"]
     df = df[df['categoria'] != "1v1.LOL"]
 
+    df_copia = df.copy()
+
     # Ajustar el ranking global de los streamers invirtiendo su valor (ranking más bajo es mejor)
     df["rank"] = df["rank"].max() + df["rank"].min() - df["rank"]
     df["rank"] = df["rank"].astype(np.int32)
 
-    return df
+    return df, df_copia
 
 if __name__ == "__main__":
     load_data()

@@ -75,8 +75,7 @@ try:
 except:
     st.error("Error al cargar los datos")
 
-df = ss.preprocesar_datos(historico, categorias, streamers)
-df_original = df.copy()
+df, df_original = ss.preprocesar_datos(historico, categorias, streamers)
 
 categorias_unicas = df['categoria'].drop_duplicates().tolist()
 categoria_seleccionada = st.selectbox("Selecciona una categoría:", categorias_unicas)
