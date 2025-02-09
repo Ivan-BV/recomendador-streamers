@@ -1,4 +1,6 @@
-# Recomendador de Streamers
+<div align="center"><img src="imagenes/logo.png" width="300"/></div>
+
+# Streamer Finder
 
 Este proyecto es una aplicación desarrollada en Python que utiliza Streamlit para crear una interfaz web interactiva. Su objetivo es recomendar streamers a los usuarios en función de ciertos criterios o preferencias.
 
@@ -116,6 +118,6 @@ Si deseas contribuir al proyecto, puedes hacerlo de la siguiente manera:
 
 ## Licencia
 
-Este proyecto está bajo la Licencia Apache 2.0. Consulta el archivo LICENSE para más detalles.
+Este proyecto está bajo la Licencia Apache 2.0. Consulta el archivo [LICENSE](https://github.com/Ivan-BV/recomendador-streamers/blob/main/LICENSE) para más detalles.
 
 Espero que esta guía te sea de ayuda para comprender y utilizar el proyecto Recomendador de Streamers. Si tienes alguna pregunta o necesitas asistencia adicional, no dudes en consultar la documentación o abrir un issue en el repositorio.
