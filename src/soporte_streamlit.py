@@ -106,7 +106,7 @@ def crear_enlace(name):
         >>> crear_enlace("Rubius")
         '<a href="/historico?streamer=Rubius" target="_blank" style="text-decoration: none; color: white;">Rubius</a>'
     """
-    return f'<a href="/historico?streamer={name}" target="_blank" style="text-decoration: none; color: white;">{name}</a>'
+    return f'<a href="/historico?streamer={name}" target="_self" style="text-decoration: none; color: white;">{name}</a>'
 
 def mostrar_datos(df: pd.DataFrame):
     """
