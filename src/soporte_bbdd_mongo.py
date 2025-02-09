@@ -2,12 +2,11 @@ from pymongo import MongoClient
 from pymongo.database import Database
 from pymongo.server_api import ServerApi
 import pandas as pd
-import os
 import numpy as np
 import streamlit as st
 
 def probar_conn_atlas():
-    uri = os.getenv("MONGO_URI_ATLAS")
+    uri: str = st.secrets['security']['MONGO_URI_ATLAS']
     # Create a new client and connect to the server
     client = MongoClient(uri, server_api=ServerApi('1'))
     # Send a ping to confirm a successful connection
@@ -31,58 +30,7 @@ def conectar_mongo():
     db = client[db_name]
     return client, db
 
-def renombrar_columnas(df: pd.DataFrame):
-    """
-    Limpia y ajusta los nombres de las columnas en el DataFrame.
-    
-    Args:
-        df: DataFrame de pandas con los datos a procesar.
-    
-    Returns:
-        DataFrame con los nombres de columnas en minúsculas y sin espacios.
-    """
-    df.columns = df.columns.str.lower()
-    return df
-
-def insertar_en_coleccion(db: Database, nombre_coleccion: str, datos, silent_mode = False, clave_unica="nombre"):
-    """
-    Inserta nuevos documentos o actualiza los existentes en la colección especificada en MongoDB.
-    
-    Args:
-        db: Conexión a la base de datos MongoDB.
-        nombre_coleccion: Nombre de la colección donde se almacenarán los datos.
-        datos: Puede ser una ruta a un archivo CSV o un DataFrame de pandas.
-        clave_unica: Clave utilizada para identificar documentos únicos y realizar actualización.
-    """
-    collection = db[nombre_coleccion]
-    
-    # Cargar datos desde un CSV si es una ruta
-    if isinstance(datos, str):
-        if not os.path.exists(datos):
-            raise FileNotFoundError(f"El archivo {datos} no existe.")
-        df = pd.read_csv(datos)
-    elif isinstance(datos, pd.DataFrame):
-        df = datos
-    else:
-        raise ValueError("El parámetro 'datos' debe ser una ruta a un archivo CSV o un DataFrame.")
-    
-    # df = renombrar_columnas(df)
-    df.columns = df.columns.str.lower()
-    
-    # Convertir DataFrame a diccionarios e insertar o actualizar en MongoDB
-    if clave_unica is None:
-        collection.insert_many(df.to_dict(orient="records"), ordered=True)
-    else:
-        for _, fila in df.iterrows():
-            filtro = {clave_unica: fila[clave_unica]}  # Buscar por la clave única
-            actualizacion = {"$set": fila.to_dict()}
-            collection.update_one(filtro, actualizacion, upsert=True)
-    
-    if not silent_mode:
-        print(f"✅ Datos insertados o actualizados en la colección '{nombre_coleccion}' correctamente.")
-
 # src/soporte_bbdd_mongo.py
-import pandas as pd
 
 def cargar_datos_en_memoria(db):
     """
@@ -297,17 +245,5 @@ def obtener_datos_para_modelo_avanzado():
 if __name__ == "__main__":
     # Conectar a MongoDB
     client, db = conectar_mongo()
-    
-    # Ejemplo de inserción o actualización de datos desde un CSV
-    insertar_en_coleccion(db, "streamers_ranking", "streamers_ranking.csv")
-    
-    # Ejemplo de inserción o actualización de datos desde un DataFrame
-    df_ejemplo = pd.DataFrame({
-        "nombre": ["Rubius"],
-        "seguidores_totales": [10500000],
-        "vistas_totales": [3500000000],
-        "enlace": ["https://twitchtracker.com/rubius"]
-    })
-    insertar_en_coleccion(db, "streamers", df_ejemplo)
     
     client.close()

@@ -3,25 +3,52 @@ import pandas as pd
 import numpy as np
 import joblib
 from src import soporte_bbdd_mongo as sbm
+from src.soporte_streamlit import load_data, mostrar_datos
 import warnings
 warnings.filterwarnings("ignore")
 
+st.set_page_config(page_title="Streamer Finder", page_icon="imagenes/logo.png")
+
+hide_fullscreen_icon = """
+        <style>
+        button[aria-label="Fullscreen"] {
+            display: none;
+        }
+        header {
+            visibility: hidden;
+        }
+        footer {
+            visibility: hidden;
+        }
+        </style>
+        """
+st.markdown(hide_fullscreen_icon, unsafe_allow_html=True)
 # Interfaz Streamlit
-col1, col2, col3 = st.columns([1,2,1])
+col1, col2, col3 = st.columns([1,1,1])
+
+# from PIL import Image
+ruta = "imagenes/logo.png"
+# image = Image.open(ruta)
 
 with col2:
-    st.image("imagenes/logo.png", use_container_width=True)
-    st.markdown("<h1 style='text-align: center; color: white;'>Streamers Finder</h1>", unsafe_allow_html=True)
+    # Código CSS para ocultar el ícono de pantalla completa
+    st.image(ruta, use_container_width=True)
+    # st.markdown("<h1 style='text-align: center; color: white;'>Streamer Finder</h1>", unsafe_allow_html=True)
+col1, col2, col3 = st.columns([2,18,1])
+with col2:
+    # st.markdown("<h1 style='text-align: center; color: white;'>Streamer Finder</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'> 🎮 Descubre los Mejores Streamers para Ti 🎮 </h3>", unsafe_allow_html=True)
 
+st.markdown("")
+st.markdown("")
 st.markdown(
     """
-    <h3 style="text-align: center;"> 🎮 Descubre los Mejores Streamers para Ti 🎮</h3>
 
     #### 🔍 ¿De qué trata esta app?
     
-    Bienvenido/a a **tu guía personalizada de streamers**. 📺🎮
+    📺 Bienvenido/a a **tu guía personalizada de streamers**.
 
-    Aquí podrás **descubrir y explorar** streamers basados en las categorías de juegos que te gustan.
+    🧑‍💻 Aquí podrás **descubrir y explorar** streamers basados en las categorías de juegos que te gustan.
 
     🚀 Encuentra contenido nuevo, compara streamers y accede a métricas detalladas para tomar la mejor decisión.  
 
@@ -42,15 +69,7 @@ Elige el modo que más te guste y descubre contenido nuevo a tu medida. 🚀
 # Conectar a MongoDB
 client, db = sbm.conectar_mongo()
 
-# Cargar datos
-@st.cache_data
-def load_data():
-    historico = pd.DataFrame(list(db.historico_streamers_total.find())).drop(columns=["_id"])
-    categorias = pd.DataFrame(list(db.categorias_streameadas.find())).drop(columns=["_id"])
-    streamers = pd.DataFrame(list(db.streamers.find())).drop(columns=["_id"])  # Cargar ranking
-    return historico, categorias, streamers
-
-historico, categorias, streamers = load_data()
+historico, categorias, streamers = load_data(db)
 
 client.close()
 
@@ -58,9 +77,6 @@ modelos_knn_basico, num_cols_basico, scaler_basico, kmeans_basico, le_basico = j
 modelos_knn_avanzado, num_cols_avanzado, kmeans_avanzado, scaler_avanzado, le_avanzado = joblib.load("modelos/modelo_lastversion.pkl")
 
 # Unir datasets
-# historico = historico.drop(columns=['_id'])
-# categorias = categorias.drop(columns=['_id'])
-# streamers = streamers.drop(columns=['_id'])
 df = historico[["id_streamer", "avgviewers", "peakviewers", "hoursstreamed"]].merge(categorias, on='id_streamer', how='left')
 df = df.merge(streamers[['id_streamer', 'rank', 'all_time_peak_viewers', 'total_followers', 'total_views']], on='id_streamer', how='left')  # Agregar ranking
 df = df[df['categoria'] != "18+"]
@@ -69,7 +85,6 @@ df = df[df['categoria'] != "2XKO"]
 df = df[df['categoria'] != "1v1.LOL"]
 df_original = df.copy()
 
-# df["rank"] = df["rank"].fillna(df["rank"].median())
 df["rank"] = df["rank"].max() + df["rank"].min() - df["rank"]
 df["rank"] = df["rank"].astype(np.int32)
 
@@ -82,10 +97,21 @@ def recomendar_streamers_por_categoria_avanzado(categoria: str, df: pd.DataFrame
         return pd.DataFrame()
 
     # 🔹 Ordenar por ranking ya invertido (ascending=False es correcto en este caso)
-    df_categoria_ordenado = df_categoria.sort_values(by=['rank'], ascending=False)  
+    df_categoria_ordenado = df_categoria.sort_values(by=['rank'], ascending=False) 
 
-    # ✅ Devolver los `n` mejores sin aplicar KNN
-    return df_categoria_ordenado[['id_streamer', 'nombre', 'total_followers', 'total_views', 'categoria', 'rank']].head(n)
+    X_categoria = df_categoria[num_cols_avanzado]
+    # nn = modelos_knn_avanzado[categoria]
+
+    centroide = X_categoria.mean().values.reshape(1, -1)
+    # distancias, indices = nn.kneighbors(centroide)
+
+    columnas_validas = ['id_streamer', 'nombre', 'categoria', 'rank']
+
+    # df_categoria_ordenado = df_categoria_ordenado[df_categoria_ordenado.index == indices]
+
+    recomendaciones = df_categoria.sort_values(by=['rank'], ascending=False)[columnas_validas]
+
+    return recomendaciones
 
 
 def recomendar_streamers_por_categoria(categoria, df, n=5):
@@ -110,58 +136,6 @@ def recomendar_streamers_por_categoria(categoria, df, n=5):
     recomendaciones = recomendaciones.sort_values(by='rank', ascending=False)  # Ordenar por ranking
     
     return recomendaciones
-
-# Función para mostrar los datos con formato en Streamlit
-def mostrar_datos(df):
-    st.markdown("""
-    <style>
-        .tabla-custom {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 16px;
-            text-align: center;
-        }
-        .tabla-custom th {
-            background-color: #4b9fff;
-            color: white;
-            padding: 12px;
-            border: 1px solid #ddd;
-        }
-        .tabla-custom td {
-            padding: 10px;
-            border: 1px solid #ddd;
-        }
-        .tabla-custom tr:nth-child(even) {
-            background-color: black;
-        }
-        .tabla-custom tr:hover {
-            background-color: gray;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
-    tabla_html = "<table class='tabla-custom'>"
-    tabla_html += "<tr>" + "".join(f"<th>{col}</th>" for col in df.columns) + "</tr>"
-
-    for _, row in df.iterrows():
-        fila = "<tr>"
-        for col in df.columns:
-            valor = row[col]
-            if isinstance(valor, (int, float)):  # Aplicar formato solo si es numérico
-                fila += f"<td>{valor:,.0f}</td>"  # Separador de miles sin decimales
-            else:
-                fila += f"<td>{valor}</td>"
-        fila += "</tr>"
-        tabla_html += fila
-
-    tabla_html += "</table>"
-
-    st.markdown(tabla_html, unsafe_allow_html=True)
-
-
-# # Interfaz Streamlit
-# st.title("Recomendador de Streamers por Categoría")
-# st.write("Este recomendador utiliza un modelo de K-Nearest Neighbors para encontrar streamers similares a los de una categoría seleccionada.")
 
 # Lista de categorías únicas
 categorias_unicas = df['categoria'].drop_duplicates().sort_values().tolist()
@@ -228,6 +202,7 @@ if st.button("Recomendar"):
     # .reset_index(drop=True)
     # .head(5))
         df_nuevo = pd.DataFrame()
+        resultados = resultados.head(5  )
         for indice, fila in resultados.iterrows():
             df_nuevo = pd.concat([df_nuevo, df_original[df_original.index == indice]], axis=0)
         df_nuevo = df_nuevo.reindex(columns=["nombre"] + df_nuevo.columns.drop(["nombre", "id_streamer", "avgviewers", "peakviewers", "categoria", "rank"]).to_list() + ["rank"])
