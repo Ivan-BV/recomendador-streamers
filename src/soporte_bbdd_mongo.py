@@ -5,39 +5,6 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 
-def probar_conn_atlas():
-    """
-    Prueba la conexión con MongoDB Atlas.
-
-    Esta función obtiene la URI de conexión desde `st.secrets`, crea un cliente de MongoDB
-    y envía un comando `ping` para verificar que la conexión con el servidor es exitosa.
-
-    Si la conexión es exitosa, imprime un mensaje de confirmación.
-    Si ocurre un error, imprime la excepción capturada.
-
-    Args:
-        None
-
-    Returns:
-        None: Solo imprime mensajes de éxito o error en la consola.
-
-    Example:
-        >>> probar_conn_atlas()
-        Pinged your deployment. You successfully connected to MongoDB!
-    """
-    uri: str = st.secrets['security']['MONGO_URI_ATLAS']
-    
-    # Crear un nuevo cliente y conectar al servidor
-    client = MongoClient(uri, server_api=ServerApi('1'))
-    
-    # Enviar un ping para confirmar la conexión
-    try:
-        client.admin.command('ping')
-        print("Pinged your deployment. You successfully connected to MongoDB!")
-    except Exception as e:
-        print(e)
-
-
 def conectar_mongo():
     """
     Conecta a la base de datos MongoDB usando variables de entorno.
@@ -106,18 +73,18 @@ def obtener_datos_para_modelo_basico():
     
     if "rank" not in df_ranking.columns:
         raise ValueError("El campo 'Rank' no se encuentra en los datos de 'historico_streamers'.")
-    
-    # Función para clasificar el ranking
-    def clasificar_rank(rank):
-        if rank < 100:
-            return "Top"
-        elif rank <= 300:
-            return "Medio"
-        else:
-            return "Bajo"
         
     df_ranking["clasificacion"] = df_ranking["rank"].apply(clasificar_rank)
     return df_ranking
+
+# Función para clasificar el ranking
+def clasificar_rank(rank):
+    if rank < 100:
+        return "Top"
+    elif rank <= 300:
+        return "Medio"
+    else:
+        return "Bajo"
 
 # Modelo avanzado
 def cargar_historial_desde_mongo(db=None):
